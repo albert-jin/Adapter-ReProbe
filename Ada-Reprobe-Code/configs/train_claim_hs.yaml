@@ -1,0 +1,68 @@
+hydra:
+  run:
+    dir: ${output_dir}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+seed: 42
+
+model:
+  pretrained_model_name_or_path: Qwen/Qwen3-1.7B
+  adapter_path: null
+  device_map: cuda
+  trust_remote_code: true
+  torch_dtype: torch.bfloat16
+
+ue_layer:
+  path: ''
+  pos_weight: 3
+  trainable_scope: all
+  adaptation:
+    bridge_rank: 0
+    bridge_alpha: 1.0
+    bridge_dropout: 0.0
+    calibration: false
+  head_cfg:
+    head_type: claim
+    feature_extractor:
+      - name: luh.feature_extractors.basic_hidden_states
+        layer_nums: [-1]
+        token_alignment: current
+    uncertainty_head:
+      head_dim: 512
+      n_layers: 1
+      n_heads: 16
+      dropout: 0.1
+      mask_future_tokens: true
+
+dataset:
+  path: hf:rediska0123/train_gsm8k_Qwen3-1.7B
+  prompt_path: configs/qwen3_prompt_general.txt
+  num_instances: 0
+  test_size: 0.1
+  validation: test
+  label_key_claim: verified
+  label_key_token: uncertainty_labels
+
+additional_test_datasets: {}
+claim_num_upper_bound: -1
+
+training_arguments:
+  num_train_epochs: 10
+  learning_rate: 0.0005
+  warmup_ratio: 0.05
+  weight_decay: 0.1
+  gradient_accumulation_steps: 8
+  per_device_train_batch_size: 4
+  max_grad_norm: 1.0
+  eval_strategy: epoch
+  save_total_limit: 1
+
+do_train: true
+do_eval: true
+do_hyperopt: false
+do_save_checkpoints: false
+do_save_final_model: true
+report_to: none
+output_dir: auto_res/runs/to_be_overwritten
+do_predict: false
+deepspeed_config: null
+local_rank: null
